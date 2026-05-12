@@ -50,6 +50,45 @@ export default class Board extends React.Component {
       status: companyDetails[3],
     }));
   }
+  
+  componentDidMount() {
+    this.drake = Dragula([
+      this.swimlanes.backlog.current,
+      this.swimlanes.inProgress.current,
+      this.swimlanes.complete.current,
+    ]);
+
+    this.drake.on('drop', (el, target) => {
+      this.drake.cancel(true);
+
+      const cardId = el.dataset.id;
+      let newStatus;
+      if (target === this.swimlanes.backlog.current) newStatus = 'backlog';
+      else if (target === this.swimlanes.inProgress.current) newStatus = 'in-progress';
+      else if (target === this.swimlanes.complete.current) newStatus = 'complete';
+
+      this.setState(prev => {
+        const all = [
+          ...prev.clients.backlog,
+          ...prev.clients.inProgress,
+          ...prev.clients.complete,
+        ].map(c => c.id === cardId ? { ...c, status: newStatus } : c);
+
+        return {
+          clients: {
+            backlog: all.filter(c => c.status === 'backlog'),
+            inProgress: all.filter(c => c.status === 'in-progress'),
+            complete: all.filter(c => c.status === 'complete'),
+          }
+        };
+      });
+    });
+  }
+
+  componentWillUnmount() {
+    if (this.drake) this.drake.destroy();
+  }
+
   renderSwimlane(name, clients, ref) {
     return (
       <Swimlane name={name} clients={clients} dragulaRef={ref}/>
